@@ -210,26 +210,33 @@ Hata:
 
 ---
 
-### 6.3 Public (Guest) — QR/NFC
+### 6.3 Public (Guest) — QR / NFC
 
 #### (P1) Araç Profilini Getir
-- **GET** `/public/vehicle/{vehicle_uuid}`
-- Response (örnek):
+- **GET** `/api/public/vehicle/{vehicle_uuid}`
+
+**Açıklama:**
+QR veya NFC okutulduğunda çağrılan ana public endpoint.
+Araç bilgilerini ve aktif hızlı mesajları döner.
+
+**Response (örnek):**
 ```json
 {
   "ok": true,
+  "message": "Vehicle found",
   "data": {
-    "vehicle_uuid": "...",
-    "plate": "...",
-    "brand": "...",
-    "model": "...",
-    "color": "...",
+    "vehicle_uuid": "ACX4921",
+    "plate": "41 ABC 123",
+    "brand": "Fiat",
+    "model": "Doblo",
+    "color": "Beyaz",
     "quick_messages": [
-      {"id":1,"text":"5 dk geliyorum"},
-      {"id":2,"text":"Acil, aşağıdan ulaşın"}
+      { "id": 1, "text": "5 dk geliyorum" },
+      { "id": 2, "text": "Acil, aşağıdan ulaşın" }
     ]
   }
 }
+
 ```
 
 ---
@@ -416,7 +423,20 @@ NDEF URI record:
   - GET /api/public/quick-messages → 200 OK, aktif quick messages listelendi
   - POST /api/public/quick-message/send → 200 OK, message başarıyla kaydedildi
 
-
+### CHECKPOINT #3 — 2025-12-13
+- Tamamlanan:
+  - GET /api/public/vehicle/{vehicle_uuid} endpoint’i eklendi
+  - Araç profili + aktif quick_messages public olarak sunuldu
+- Etkilenen dosyalar:
+  - routes/api.php
+  - app/Http/Controllers/Api/PublicController.php
+  - app/Models/QuickMessage.php
+- Teknik notlar:
+  - Public endpoint’te user/owner bilgisi gizlendi
+  - Response standardı `{ ok, message, data }` formatına alındı
+- Test sonucu:
+  - Geçerli vehicle_uuid → 200 OK
+  - Geçersiz vehicle_uuid → 404 Vehicle not foun
 
 
 ## 11) Yapılanlar / Kalanlar (Durum Tablosu)
@@ -429,6 +449,9 @@ NDEF URI record:
 - [x] Public quick_messages listeleme endpoint’i (GET /api/public/quick-messages)
 - [x] Public quick_message gönderme endpoint’i (POST /api/public/quick-message/send)
 - [x] Quick message → messages tablosuna kayıt akışı tamamlandı
+- [x] Public vehicle profile endpoint’i (GET /api/public/vehicle/{vehicle_uuid}) tamamlandı
+- [x] Public response standardı sabitlendi (ok/message/data)
+- [x] QuickMessage → public profile entegrasyonu yapıldı
 
 
 
@@ -509,3 +532,22 @@ Hedef:
 - Endpoint isimleri keyfine göre değişmez.
 - `vehicle_uuid` (public) ile `vehicles.id` (internal) karıştırılırsa proje sürekli kırılır.
 - Flutter “hangi endpoint’i çağırıyor?” sorusu bu dosyada her zaman net olmalı.
+
+
+## 🔧 Version Control (Git & GitHub)
+
+### Repository
+- **Platform:** GitHub
+- **Repository URL:**  
+  https://github.com/huseyincakirca/arvoncode-car-nfc-api
+- **Branch:** `main`
+- **Local Path:** `/opt/lampp/htdocs/car-nfc-api`
+
+### Git Initialization
+Proje yerel ortamda Git ile aşağıdaki adımlar izlenerek versiyon kontrolüne alınmıştır:
+
+```bash
+git init
+git branch -M main
+git add .
+git commit -m "Initial commit: ArvonCode Car NFC API backend"

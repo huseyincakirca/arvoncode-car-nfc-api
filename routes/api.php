@@ -40,4 +40,6 @@ Route::middleware('auth:sanctum')->post('/user/push-id', function (Request $req)
 
 Route::get('/public/quick-messages', [QuickMessageController::class, 'index']);
 Route::post('/public/quick-message/send', [QuickMessageController::class, 'send']);
+Route::get('/public/vehicle/{vehicle_uuid}', [PublicController::class, 'vehicleProfile']);
+
 

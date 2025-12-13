@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\Parking;
 use App\Models\User;
+use App\Models\QuickMessage;
 
 class PublicController extends Controller
 {
@@ -72,5 +73,39 @@ class PublicController extends Controller
                 'vehicle_id' => $vehicle->vehicle_id,
             ], 201);
         }
+
+
+    public function vehicleProfile($vehicle_uuid)
+    {
+        $vehicle = Vehicle::withoutGlobalScopes()
+            ->where('vehicle_id', trim($vehicle_uuid))
+            ->first();
+
+        if (!$vehicle) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Vehicle not found',
+                'data' => null
+            ], 404);
+        }
+
+        $quickMessages = QuickMessage::where('is_active', true)
+            ->orderBy('id')
+            ->get(['id','text']);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Vehicle found',
+            'data' => [
+                'vehicle_uuid' => $vehicle->vehicle_id,
+                'plate' => $vehicle->plate,
+                'brand' => $vehicle->brand,
+                'model' => $vehicle->model,
+                'color' => $vehicle->color,
+                'quick_messages' => $quickMessages
+            ]
+        ]);
+    }
+
 
 }
