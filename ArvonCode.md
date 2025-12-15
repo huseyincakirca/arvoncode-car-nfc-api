@@ -551,3 +551,66 @@ git init
 git branch -M main
 git add .
 git commit -m "Initial commit: ArvonCode Car NFC API backend"
+
+
+
+## Environment & System Setup (2025-01 Reset)
+
+### Operating System
+- OS: Ubuntu 24.04 LTS (Clean Install)
+- Kernel: 6.14.x
+- Installation type: Manual partitioning
+- /home directory: Recreated (restored from backup)
+- /opt directory: Restored from opt-backup.tar.gz
+
+### System Reset Notes
+- Previous system had snap & package corruption
+- Full clean installation was performed
+- All development tools reinstalled manually
+- Legacy paths and broken snap configurations removed
+
+### Core Development Tools
+
+#### Flutter
+- Flutter SDK: 3.24.4 (stable)
+- Install method: Local SDK restored from backup
+- Path: ~/flutter
+- PATH configured in ~/.bashrc
+- flutter doctor: ✅ all checks passed
+
+#### Android
+- Android Studio: 2025.2.2
+- Installed to: /opt/android-studio
+- Android SDK path: /home/cakirca/Android/Sdk
+- cmdline-tools installed
+- Licenses accepted
+- Physical device tested successfully
+
+#### Backend
+- Laravel API repository: arvoncode-car-nfc-api
+- Location: /home/cakirca/arvoncode-car-nfc-api
+- API previously located under /opt/lampp/htdocs (legacy)
+- New structure prefers HOME-based projects
+
+#### Git
+- Git installed via apt
+- Global user configured:
+  - Name: Hüseyin Çakırca
+  - Email: huseyincakirca@hotmail.com.tr
+- GitHub authentication via Personal Access Token
+- Credential helper: store
+- Token stored locally
+
+#### Frontend
+- Flutter App repository: arvoncode_app
+- Git repository initialized after restore
+- Branch: main
+- GitHub remote configured and verified
+- Application successfully built and deployed to device
+
+### Notes
+- System verified by running:
+  - flutter run (Android device)
+  - git push / pull
+  - android build & install
+- This environment is considered STABLE BASELINE
