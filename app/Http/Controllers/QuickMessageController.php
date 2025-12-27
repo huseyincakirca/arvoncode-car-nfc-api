@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Requests\PublicQuickMessageSendRequest;
 
 class QuickMessageController extends Controller
 {
@@ -21,14 +22,9 @@ class QuickMessageController extends Controller
             'data' => $items,
         ]);
     }
-
-        public function send(Request $request)
+    public function send(PublicQuickMessageSendRequest $request)
     {
-        $validated = $request->validate([
-            'vehicle_uuid' => ['required', 'string'],
-            'quick_message_id' => ['required', 'integer'],
-            'phone' => ['nullable', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         // 1) vehicle_uuid -> vehicles tablosunda ara (vehicles.vehicle_id alanı!)
         $vehicle = DB::table('vehicles')
@@ -40,6 +36,7 @@ class QuickMessageController extends Controller
             return response()->json([
                 'ok' => false,
                 'message' => 'Vehicle not found',
+                'error_code' => 'VEHICLE_NOT_FOUND',
                 'errors' => ['vehicle_uuid' => ['Invalid vehicle_uuid']],
             ], 404);
         }
@@ -55,6 +52,7 @@ class QuickMessageController extends Controller
             return response()->json([
                 'ok' => false,
                 'message' => 'Quick message not found',
+                'error_code' => 'VEHICLE_NOT_FOUND',
                 'errors' => ['quick_message_id' => ['Invalid quick_message_id']],
             ], 404);
         }
@@ -78,5 +76,4 @@ class QuickMessageController extends Controller
             ],
         ]);
     }
-
 }

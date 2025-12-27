@@ -28,6 +28,13 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('public', function (Request $request) {
+            $ip = $request->ip();
+
+            // Dakikada 60 istek: MVP için yeterli, abuse’u azaltır.
+            return Limit::perMinute(60)->by($ip);
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

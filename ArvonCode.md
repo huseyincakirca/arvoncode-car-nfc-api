@@ -1,10 +1,35 @@
 # ArvonCode — Phoenix Master Doc (ARVONCODE-PHOENIX)
 
-> Bu dosya **tek kaynak gerçeği (single source of truth)**.  
-> Projede **her şey** (amaç, mimari, endpoint’ler, request/response, DB şeması, dosya yapısı, yapılanlar, kalanlar, checkpoint’ler) burada tutulur.  
+> Bu dosya **tek kaynak gerçeği (single source of truth)**.
+> Projede **her şey** (amaç, mimari, endpoint’ler, request/response, DB şeması, dosya yapısı, yapılanlar, kalanlar, checkpoint’ler) burada tutulur.
 > Yeni sekmeye geçerken bu dosyayı paylaş: Ben de **%100 buradan** devam ederim, karışıklık olmaz.
 
 ---
+#### 🚦 PROJE DURUM ÖZETİ (LIVE STATUS)
+- Aktif Aşama: 📱 Flutter NFC Entegrasyonu.
+- Aktif Modül: Flutter — NFC Manager & Permissions
+- Son çalışan tarih: 2025-12-25
+- Şu an kilit görev: Flutter tarafında NFC okuma akışını kodlamak (NDEF URI → vehicle_uuid → VehicleProfileScreen).
+
+---
+
+### 📍 GÜNCEL PROJE DURUMU (ÖZET)
+- Aktif Aşama: UI Genişletme ve Entegrasyon
+- Aktif Modül: Owner
+- Son Çalışan Tarih: 2025-12-27
+- Şu Anki Kilit Görev: Owner Locations UI’nin geliştirilmesi
+
+---
+
+### ⏭️ BİR SONRAKİ ADIMA ETKİSİ
+- Owner tarafında Messages özelliği uçtan uca tamamlandığı için:
+  - Aynı pattern kullanılarak Owner Locations UI geliştirilebilir.
+  - Dashboard üzerindeki statik paneller gerçek backend verileriyle beslenebilir.
+  - Owner modülü için ortak state management altyapısına geçiş yapılabilir.
+
+### Bir sonraki checkpoint hedefi
+- CHECKPOINT #15
+-
 
 ## 0) Kimlik
 
@@ -12,10 +37,10 @@
 - **Kod Adı / Hafıza Anahtarı:** ARVONCODE-PHOENIX
 - **Proje Türü:** NFC + QR kodlu akıllı araç kartı sistemi (Laravel API + Flutter mobil)
 - **Ana Problem:** Aracı bulan kişi/ziyaretçi, araç sahibine **anonim, hızlı, güvenli** şekilde ulaşabilsin.
-- **Hedef Çıktı:**  
-  1) Ziyaretçi QR/NFC okutur → araç ekranı açılır  
-  2) “Hızlı mesaj” seçer veya mesaj yazar  
-  3) (Opsiyonel) konum kaydeder  
+- **Hedef Çıktı:**
+  1) Ziyaretçi QR/NFC okutur → araç ekranı açılır
+  2) “Hızlı mesaj” seçer veya mesaj yazar
+  3) (Opsiyonel) konum kaydeder
   4) Araç sahibi mobil/panel üzerinden görür
 
 ---
@@ -31,9 +56,9 @@ Araç sahibine, aracın yanında kimseyle numara paylaşmadan iletişim kurulabi
 - **Araç Sahibi Akışı (Owner):** login → araçlar → QR/NFC üret → gelen mesajlar → konum kayıtları
 
 ### 1.3 Kritik Tasarım İlkeleri
-- **Anonimlik:** Ziyaretçi araç sahibinin telefonunu görmez.  
-- **Hız:** 2 tıkta mesaj.  
-- **Stabilite:** Endpoint isimleri asla rastgele değişmez.  
+- **Anonimlik:** Ziyaretçi araç sahibinin telefonunu görmez.
+- **Hız:** 2 tıkta mesaj.
+- **Stabilite:** Endpoint isimleri asla rastgele değişmez.
 - **Standard JSON:** Tüm response formatı aynı olacak.
 
 ---
@@ -67,9 +92,30 @@ Araç sahibine, aracın yanında kimseyle numara paylaşmadan iletişim kurulabi
      v
 [MySQL]
 ```
+- ### Kart (vehicle_id) Kimliği Hakkında
 
-**En kritik karar:** QR/NFC içinde taşınan ana anahtar **vehicle_uuid** (`vehicles.vehicle_id`).  
-DB’de arama `vehicles.vehicle_id = <vehicle_uuid>` ile yapılır.
+Bu sistemde `vehicle_id`, backend tarafından rastgele oluşturulan bir değer değildir.
+
+- `vehicle_id`, **önceden üretilmiş ve fiziksel karta (QR/NFC) yazılmış benzersiz kart kimliğidir**.
+- Kartlar bu `vehicle_id` ile basılır, stoklanır ve satılır.
+- Kullanıcı, kartı satın aldıktan sonra uygulama üzerinden kartı okutarak (`vehicle_id` göndererek) kartı kendi hesabına **aktive eder**.
+- Activate işlemi, kartın (`vehicle_id`) ilgili kullanıcıya (`user_id`) bağlanmasıdır.
+- Araç bilgileri (plate, brand, model, color) kart aktivasyonundan sonra veya ayrı bir adımda girilebilir.
+
+Not:
+- Bir kullanıcı birden fazla karta sahip olabilir (araç, motor, ev vb.).
+- Public endpoint’lerde kullanılan `vehicle_uuid` ifadesi, teknik olarak `vehicle_id` ile aynı değeri temsil eder.
+
+### Kart Aktivasyonu ve Araç Ekleme
+
+Kullanıcı, kartı aktif etmeden önce araç bilgilerini sisteme ekleyebilir. Ancak kartın **aktif edilmesi**, yani **vehicle_id'nin kullanıcıya bağlanması** gereklidir. Kullanıcı kartı okutup sisteme `vehicle_id` gönderdiğinde, sistem kartı aktif eder ve kullanıcıya **araç bilgisi ekleme** imkânı sunar.
+
+### Public Endpoint ve Kart Kimliği
+
+QR ve NFC içeriği, araç kimliğini (`vehicle_id`) taşır. Bu `vehicle_id`, backend tarafından **fiziksel kart üretildiğinde** belirlenmiş ve kartın üzerinde yer alır. Public endpoint’ler bu `vehicle_id` değerini kullanarak araç bilgilerini ve mesajları sağlar.
+
+Public endpoint’lerde kullanılan `vehicle_uuid` ile `vehicle_id` teknik olarak **aynı değeri** temsil eder. Bu iki isim farklı olsa da, **hepsi aynı kimliği taşır**.
+
 
 ---
 
@@ -110,7 +156,7 @@ Amaç: Ziyaretçiden araç sahibine mesaj kaydı.
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
-> **Çok kritik nokta:** `messages.vehicle_id` burada **vehicles tablosundaki numeric id**.  
+> **Çok kritik nokta:** `messages.vehicle_id` burada **vehicles tablosundaki numeric id**.
 > Ziyaretçi request’te `vehicle_uuid` (vehicles.vehicle_id) gönderirse, backend önce `vehicles.id`’yi bulup messages’a onu yazmalı.
 
 ### 4.4 quick_messages (önerilen)
@@ -192,6 +238,10 @@ Hata:
 ---
 
 ### 6.2 Vehicles (Owner)
+- Not: Bu endpoint yeni bir kart (vehicle_id) üretmez.
+- `vehicle_id`, fiziksel kart üzerinde bulunan kimliktir ve aktivasyon sırasında kullanıcıya bağlanır.
+- `vehicle_id`, fiziksel karta (QR/NFC) önceden yazılmış benzersiz kart kimliğidir.
+- Bu endpoint yeni bir kart üretmez; mevcut kartın kullanıcı tarafından aktive edilmesini sağlar.
 
 #### (V1) Listele
 - **GET** `/vehicles` (auth required)
@@ -202,13 +252,14 @@ Hata:
 ```json
 { "plate":"", "brand":"", "model":"", "color":"" }
 ```
-- Backend otomatik `vehicle_id (uuid)` üretir.
+
 
 #### (V3) Tek Araç
 - **GET** `/vehicles/{vehicle_uuid}` (auth required)
 - `{vehicle_uuid}` = `vehicles.vehicle_id`
 
 ---
+
 
 ### 6.3 Public (Guest) — QR / NFC
 
@@ -254,8 +305,8 @@ Araç bilgilerini ve aktif hızlı mesajları döner.
 }
 ```
 - Backend:
-  1) `vehicles` tablosunda `vehicle_id=vehicle_uuid` bul  
-  2) `messages.vehicle_id` alanına **vehicles.id** yaz  
+  1) `vehicles` tablosunda `vehicle_id=vehicle_uuid` bul
+  2) `messages.vehicle_id` alanına **vehicles.id** yaz
   3) `sender_ip` kaydet
 
 #### (M2) Owner Mesajları Listele
@@ -438,6 +489,521 @@ NDEF URI record:
   - Geçerli vehicle_uuid → 200 OK
   - Geçersiz vehicle_uuid → 404 Vehicle not foun
 
+### CHECKPOINT #4 — 2025-12-15
+- Tamamlanan:
+  - Vehicle activate (kart aktivasyonu) endpoint’i çalışır hale getirildi
+  - Kart-önce (vehicle_id karttan gelir) mimarisi netleştirildi
+  - ArvonCode.md mimari açıklamaları güncellendi
+- Etkilenen dosyalar:
+  - app/Http/Controllers/Api/VehicleController.php
+  - routes/api.php
+  - ArvonCode.md
+- Test sonucu:
+  - POST /api/vehicle/activate → 200 OK
+  - Kart (vehicle_id) kullanıcıya başarıyla bağlandı
+  - MySQL vehicles tablosuna kayıt doğrulandı
+
+### CHECKPOINT #5 — 2025-12-16
+- Tamamlanan:
+  - Guest tarafından konum kaydetme (Location Save) akışı tamamlandı
+  - POST /api/public/location/save endpoint’i aktif edildi
+  - vehicle_uuid → vehicles.id (numeric) mapping doğrulandı
+  - Konum kayıtları locations tablosuna başarıyla yazılıyor
+  - Owner için konum listeleme endpoint’i eklendi
+
+- Etkilenen dosyalar:
+  - database/migrations/2025_12_16_xxxxxx_create_locations_table.php
+  - app/Models/Location.php
+  - app/Http/Controllers/LocationController.php
+  - routes/api.php
+
+- Eklenen endpoint’ler:
+  - POST /api/public/location/save
+  - GET /api/locations
+
+- Teknik notlar:
+  - Public endpoint auth gerektirmiyor
+  - vehicle_uuid public katmanda kullanıldı
+  - Internal kayıt numeric vehicles.id üzerinden yapıldı
+  - Response standardı (ok / message / data) korundu
+
+- Test sonucu:
+  - POST /api/public/location/save → 200 OK
+  - Konum DB’ye yazıldı
+  - GET /api/locations → sadece owner’a ait araçların konumları listelendi
+
+
+### CHECKPOINT #6 — 2025-12-16
+
+- Tamamlanan:
+  - 6.1 Flutter API Config kuruldu
+  - ApiConfig ile dev/prod ayrımı yapıldı
+  - baseUrl içinde /api sabitlendi
+  - Gerçek cihaz testi için LAN IP kullanıldı (php artisan serve --host=0.0.0.0 --port=8000)
+  - 6.2 Flutter Quick Message Send çalışır hale getirildi
+  - Flutter’daki hardcode endpoint temizlendi (yanlış /v/{uuid}/message kaldırıldı)
+  - Doğru endpoint’e geçildi: POST /api/public/quick-message/send
+  - Doğru payload’a geçildi: vehicle_uuid + quick_message_id
+  - JSON response için Accept: application/json eklendi
+  - DB’de quick_messages boşluğu tespit edildi ve seeder ile veri doğrulandı/aktif edildi
+  - Flutter’dan test: { ok:true, message:"Message sent", data:{ vehicle_uuid:"TEST123456", quick_message_id:1 } }
+  - Etkilenen dosyalar (Flutter):
+
+  - lib/config/api_config.dart (yeni)
+  - lib/services/quick_message_service.dart (yeni)
+  - lib/services/message_service.dart (refactor / eski hardcode kaldırıldı veya quick-flow’dan ayrıldı)
+
+  - lib/screens/nfc_menu.dart (buton action güncellendi, req/custom flow temizlendi)
+  - Etkilenen dosyalar (Backend):
+  - database/seeders/QuickMessageSeeder.php (kullanıldığı doğrulandı / çalıştırıldı)
+  - app/Models/QuickMessage.php (fillable doğrulandı)
+
+- Test sonucu:
+  - Telefon (aynı Wi-Fi) üzerinden Laravel’e erişim doğrulandı
+  - Flutter’dan quick message gönderimi başarılı (200 + ok:true)
+  - 404/422 hataları (endpoint/payload/id eksikliği) giderildi
+Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/message) henüz Flutter’da finalize edilmedi; quick message akışı netleştirildi.
+
+### CHECKPOINT #7 — 2025-12-17
+
+- Tamamlanan:
+  - Flutter tarafında Guest konum kaydetme (Location Save) akışı tamamlandı
+  - Android gerçek cihazdan GPS konumu alındı
+  - Flutter → Laravel API entegrasyonu birebir doğrulandı
+  - POST /api/public/location/save endpoint’i Flutter’dan başarıyla çağrıldı
+  - Konum kayıtları MySQL `locations` tablosuna yazıldı
+  - source alanı guest_qr olarak kaydedildi
+  - vehicle_uuid → vehicles.id (numeric) mapping backend tarafında sorunsuz çalıştı
+
+- Etkilenen dosyalar (Flutter):
+  - lib/config/api_config.dart
+  - lib/services/location_service.dart
+  - lib/services/device_location_service.dart
+  - lib/screens/location_test_screen.dart (geçici test ekranı)
+
+- Etkilenen dosyalar (Backend):
+  - app/Http/Controllers/LocationController.php
+  - app/Models/Location.php
+  - routes/api.php
+  - database/migrations/*_create_locations_table.php
+
+- Eklenen / kullanılan endpoint’ler:
+  - POST /api/public/location/save
+  - GET /api/locations (owner)
+
+- Teknik notlar:
+  - Flutter gerçek cihazda (LAN IP) test edildi
+  - Android konum izinleri (FINE / COARSE) runtime’da alındı
+  - geolocator paketi kullanıldı
+  - Android Gradle + Flutter uyumsuzluğu için `android/build.gradle` içinde
+    `ext.flutter.compileSdkVersion` workaround uygulandı
+  - Terminal log’larındaki warning/debug mesajlarının runtime hata olmadığı doğrulandı
+
+- Test sonucu:
+  - Flutter ekranında `{ ok:true, message:"Location saved" }` alındı
+  - MySQL doğrulaması yapıldı:
+    `SELECT * FROM locations ORDER BY id DESC LIMIT 1;`
+  - Gerçek koordinatlar (lat/lng) DB’de doğrulandı
+
+### CHECKPOINT #8 — 2025-12-17
+
+- Tamamlanan:
+  - Flutter’da Public Vehicle Profile ekranı (Guest) tamamlandı
+  - GET /api/public/vehicle/{vehicle_uuid} endpoint’i Flutter’dan gerçek cihazda çağrıldı ve doğrulandı
+  - Araç bilgileri (plate, brand, model, color) UI’da gösterildi
+  - Quick messages UI’da buton olarak listelendi
+  - Butonlara basınca doğru quick_message_id loglandı (debug doğrulama)
+
+- Etkilenen dosyalar (Flutter):
+  - lib/services/public_service.dart (yeni)
+  - lib/screens/vehicle_profile_screen.dart (yeni)
+  - lib/main.dart (geçici test routing: VehicleProfileScreen(vehicleUuid: 'TEST123456'))
+
+- Kullanılan endpoint:
+  - GET /api/public/vehicle/{vehicle_uuid}
+
+- Teknik notlar:
+  - Accept: application/json header zorunluluğu uygulandı
+  - jsonDecode sonrası Map cast düzgünleştirildi (tip güvenliği)
+  - Bu checkpoint sadece “profile + quick messages list” doğrulamasıdır
+
+- Test sonucu:
+  - Gerçek cihazda Vehicle Profile ekranı açıldı
+  - Plaka ve araç bilgileri doğru göründü
+  - 5 adet hızlı mesaj butonu doğru render edildi
+  - Tıklama ile “Quick message id: 1..5” logları alındı
+
+  ### CHECKPOINT #9 — 2025-12-17
+
+- Tamamlanan:
+  - Flutter’da Public Vehicle Profile ekranındaki quick message butonları gerçek gönderim aksiyonuna bağlandı
+  - POST /api/public/quick-message/send endpoint’i Flutter’dan gerçek cihazda kullanıldı
+  - vehicle_uuid + quick_message_id payload standardı birebir uygulandı
+  - Aynı hızlı mesaj için spam / tekrar gönderim problemi tespit edildi ve çözüldü
+  - Flutter tarafında **ID bazlı cooldown (throttle)** mekanizması eklendi
+  - Concurrent request + hızlı tekrar tıklama senaryoları kontrol altına alındı
+
+- Etkilenen dosyalar (Flutter):
+  - lib/services/quick_message_service.dart
+  - lib/screens/vehicle_profile_screen.dart
+
+- Teknik notlar:
+  - Tek bir global `_sending` flag’inin FutureBuilder + rebuild sebebiyle yetersiz olduğu görüldü
+  - Çözüm olarak:
+    - `_sendingMessageIds: Set<int>` (concurrent lock)
+    - `_lastSentAt: Map<int, DateTime>` + cooldown (2 saniye)
+    - Minimum spinner süresi (400ms) eklendi
+  - Böylece:
+    - Aynı quick_message_id aynı anda 2 kere gönderilemiyor
+    - Kısa sürede spam tıklama engelleniyor
+    - UX stabil hale getirildi
+
+- Kullanılan endpoint:
+  - POST /api/public/quick-message/send
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi
+  - Terminal log’larında beklenen davranış doğrulandı:
+    - Aynı mesaja seri tıklamada **2 saniyede 1** istek
+  - Backend response:
+    `{ ok:true, message:"Message sent", data:{ vehicle_uuid, quick_message_id } }`
+  - DB tarafında mesaj kayıtları beklendiği gibi oluştu
+
+### CHECKPOINT #10 — 2025-12-20
+- Tamamlanan:
+  - Location Save (Konum Bildir) özelliği ana `VehicleProfileScreen` ekranına entegre edildi.
+  - Bağımsız test ekranı (`location_test_screen.dart`) devre dışı bırakıldı/temizlendi.
+  - UI tasarımı olarak "Aracın Yanında mısınız?" kart yapısı (3. seçenek) uygulandı.
+  - Konum alma ve API'ye gönderme süreçleri tek buton altına toplandı.
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/vehicle_profile_screen.dart
+- Test sonucu:
+  - Gerçek cihazda "Konumumu Bildir" butonuna basıldığında GPS verisi alınıyor ve `POST /api/public/location/save` başarılı şekilde tetikleniyor.
+  - SnackBar ile kullanıcıya geri bildirim veriliyor.
+
+  ### CHECKPOINT #11 — 2025-12-21
+
+- Tamamlanan:
+  - Flutter Guest Flow stabilizasyonu tamamlandı
+  - Location Save akışı async-safe hale getirildi
+  - `mounted` kontrolleri ile BuildContext async uyarıları giderildi
+  - Location gönderimi için cooldown (10 sn) mekanizması eklendi
+  - Location UI ve iş mantığı ayrıştırıldı:
+    - `_onSendLocationPressed` → kontrol & throttle
+    - `_sendCurrentLocation` → GPS + API işlemi
+  - Guest Location Save akışı spam ve double-tap senaryolarına karşı korumalı hale getirildi
+  - Location hata senaryoları (izin yok / konum kapalı / genel hata) kullanıcıya ayrıştırılarak bildirildi
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/vehicle_profile_screen.dart
+
+- Teknik notlar:
+  - `use_build_context_synchronously` uyarıları tamamen giderildi
+  - Location state yönetimi tek değişken (`_isLocationSending`) üzerinden sadeleştirildi
+  - Cooldown logic UI’dan izole edildi
+  - Test ekranı (`location_test_screen.dart`) tamamen kaldırıldı
+  - Guest Flow artık tek ekranda:
+    - Araç bilgileri
+    - Quick Messages
+    - Location Save
+    şeklinde çalışıyor
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi
+  - Konum gönderimi başarıyla backend’e iletildi
+  - Cooldown süresi içinde tekrar gönderim engellendi
+  - Async dispose senaryolarında crash gözlemlenmedi
+  - Guest Flow stabil kabul edildi
+
+### CHECKPOINT #12 — 2025-12-21
+
+- Tamamlanan:
+  - Flutter’da Scan / QR akışı (Guest) MVP seviyesinde tamamlandı:
+    - Kamera açılıyor
+    - QR okutuluyor
+    - QR içeriğinden vehicle_uuid parse ediliyor
+    - Vehicle Profile ekranına otomatik yönlendirme yapılıyor
+  - QR okuma altyapısı için `mobile_scanner` eklendi ve proje SDK uyumsuzluğu çözülerek stabil sürüme indirildi
+  - QR okuma “multi-trigger” (aynı QR’yi saniyede çok kez okuma → 3-4 sayfa açma) problemi çözüldü (tek seferlik handle/lock)
+  - Scan ekranından Vehicle Profile’a geçişte kamera arkada açık kalma problemi çözüldü:
+    - `Navigator.pushReplacement` ile ScanScreen stack’ten çıkarıldı → kamera kapanıyor
+  - Geçersiz / kayıtlı olmayan QR okutulunca kullanıcıya ham JSON/Exception gösterme problemi çözüldü:
+    - VehicleProfileScreen hata UI’ı kullanıcı-dostu mesaja çevrildi
+  - QR okutma testleri:
+    - Kayıtlı vehicle_uuid → Vehicle Profile doğru açılıyor ve veriler geliyor
+    - Kayıtsız vehicle_uuid → kullanıcı-dostu “kayıtlı değil” ekranı gösteriliyor (JSON yok)
+
+- Etkilenen dosyalar (Flutter):
+  - lib/main.dart (test kilidi kaldırıldı, HomeScreen’e yönlendirme)
+  - lib/screens/home_screen.dart (ana ekran + “QR / NFC Tara” butonu)
+  - lib/screens/scan_screen.dart (QR tarama ekranı + single-scan lock + pushReplacement navigation)
+  - lib/utils/vehicle_uuid_parser.dart (QR/NFC raw string → vehicle_uuid extraction)
+  - lib/screens/vehicle_profile_screen.dart (hata ekranı UX düzeltmesi; ham exception/JSON kaldırıldı)
+  - pubspec.yaml (mobile_scanner sürümü stabil uyumlu sürüme sabitlendi)
+
+- Eklenen paket / teknik notlar:
+  - `mobile_scanner` paketinde Android SDK / AGP uyumsuzluğu yaşandı
+  - Çözüm: paketin stabil uyumlu sürümü kullanıldı (compileSdk/AGP yükseltmeye zorlanmadı)
+  - QR okuma debounce/lock:
+    - aynı QR kadrajda kalınca çoklu detect oluyordu → tek seferlik handle + replacement navigation ile çözüldü
+
+- Silinen / devre dışı bırakılanlar:
+  - main.dart içindeki hardcoded test routing kaldırıldı:
+    - `home: VehicleProfileScreen(vehicleUuid: 'TEST...')` kaldırıldı
+  - Scan ekranında “SnackBar ile sadece QR Okundu göster” test yaklaşımı production akışa çevrildi (artık parse + redirect var)
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi
+  - Kamera açılıyor, QR okunuyor, tek sefer yönlendirme oluyor
+  - Kayıtlı QR → Vehicle Profile ekranı doğru geliyor
+  - Kayıtsız QR → kullanıcı-dostu hata ekranı geliyor (ham JSON/Exception yok)
+  - Scan → Vehicle Profile geçişinde kamera arkada açık kalmıyor (ikon/pushReplacement etkisi doğrulandı)
+
+### CHECKPOINT #13 — 2025-12-22
+
+- Tamamlanan:
+  - Public (Guest) endpoint’ler için server-side rate limit mekanizması eklendi (`throttle:public`)
+  - IP bazlı request sınırlaması tanımlandı (RateLimiter: public)
+  - Public endpoint’ler için request logging altyapısı kuruldu
+  - Public istekler DB seviyesinde loglanmaya başlandı
+  - Validation hataları için Laravel default response’ları devre dışı bırakıldı
+  - Public endpoint’lerde FormRequest tabanlı validation yapısına geçildi
+  - Validation hataları `{ ok, message, error_code, errors }` standart formatına alındı
+  - Rate limit (429) hataları global olarak yakalanıp standart JSON response’a çevrildi
+  - Public Quick Message Send akışı FormRequest + `$validated` kullanacak şekilde refactor edildi
+  - Public Location Save akışı FormRequest + `$validated` kullanacak şekilde refactor edildi
+  - `vehicle_uuid` (public) → `vehicles.id` (numeric) mapping güvenli hale getirildi
+  - Controller seviyesinde doğrudan `$request->field` kullanımı kaldırıldı (public endpoint’ler)
+
+- Etkilenen dosyalar:
+  - routes/api.php
+  - app/Providers/RouteServiceProvider.php
+  - app/Http/Kernel.php
+  - app/Http/Middleware/PublicRequestLogger.php
+  - app/Models/PublicRequestLog.php
+  - database/migrations/2025_12_22_xxxxxx_create_public_request_logs_table.php
+  - app/Http/Requests/PublicQuickMessageSendRequest.php
+  - app/Http/Requests/PublicLocationSaveRequest.php
+  - app/Exceptions/Handler.php
+  - app/Http/Controllers/QuickMessageController.php
+  - app/Http/Controllers/LocationController.php
+
+- Eklenen DB yapıları:
+  - public_request_logs
+    - endpoint
+    - method
+    - ip
+    - user_agent
+    - vehicle_uuid
+    - vehicle_id
+    - ok
+    - status_code
+    - error_code
+    - error_message
+    - created_at
+    - updated_at
+
+- Teknik notlar:
+  - Public endpoint’ler artık abuse / spam senaryolarına karşı korumalıdır
+  - Validation hataları Flutter tarafında ham Laravel JSON olarak görünmez
+  - 404 / 422 / 429 hata senaryoları standart response formatında dönmektedir
+  - Public request’ler geriye dönük analiz edilebilir hale getirilmiştir
+  - Guest Flow backend tarafı prod seviyesine yaklaştırılmıştır
+
+- Test sonucu:
+  - GET /api/public/quick-messages → 200 OK
+  - POST /api/public/quick-message/send
+    - eksik payload → 422 VALIDATION_ERROR
+    - geçerli payload → 200 OK
+  - POST /api/public/location/save
+    - eksik lat/lng → 422 VALIDATION_ERROR
+    - geçerli payload → 200 OK
+  - Rate limit aşıldığında → 429 RATE_LIMIT
+  - Public isteklerin tamamı public_request_logs tablosuna yazıldı
+
+### CHECKPOINT #14 — 2025-12-23
+
+- Tamamlanan:
+  - Flutter Guest Custom Message akışı tamamlandı
+  - Vehicle Profile ekranına “Mesaj Yaz” butonu eklendi
+  - Ziyaretçi kendi mesajını ve telefon bilgisini girip gönderebiliyor
+  - POST /api/public/message endpoint’i Flutter’dan başarıyla kullanıldı
+  - Boş mesaj gönderimi UI seviyesinde engellendi
+  - Başarılı gönderimde kullanıcıya geri bildirim verildi
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/send_custom_message_screen.dart (yeni)
+  - lib/screens/vehicle_profile_screen.dart
+  - lib/services/message_service.dart
+
+- Etkilenen dosyalar (Backend):
+  - app/Http/Controllers/Api/PublicController.php
+  - routes/api.php
+
+- Kullanılan endpoint:
+  - POST /api/public/message
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi
+  - Mesaj ve telefon bilgisi messages tablosuna doğru şekilde yazıldı
+  - sender_ip, vehicle_id ve message alanları doğrulandı
+
+  #### CHECKPOINT #15 — 2025-12-26 (NFC Platform Setup)
+
+- Tamamlanan: nfc_manager eklendi;
+  - Android NFC izinleri/intent-filter;
+  - NDEF tech listesi;
+  - iOS NFC kullanım mesajı
+  - Entitlements (NDEF okuma) bağlandı.
+
+- Etkilenen dosyalar:
+  - pubspec.yaml,
+  - AndroidManifest.xml,
+  - nfc_tech_list.xml,
+  - Info.plist,
+  - Runner.entitlements,
+  - project.pbxproj.
+
+- Test: Çalıştırılmadı;
+  - sadece config eklendi.
+
+  ### CHECKPOINT #16 — 2025-12-26 (Flutter NFC Okuma & UI Ayrımı)
+
+- Tamamlanan:
+  - Flutter’da NFC okuma akışı `nfc_manager` ile aktif hale getirildi.
+  - NFC NDEF URI → `vehicle_uuid` parse → `VehicleProfileScreen` yönlendirme zinciri tamamlandı.
+  - QR ve NFC tarama akışları **UI ve logic olarak ayrıldı**:
+    - QR modunda kamera aktif.
+    - NFC modunda kamera kapalı, sadece NFC oturumu açık.
+  - `VehicleUuidParser` genişletildi:
+    - `arvoncode://v/<uuid>`
+    - plain `<uuid>`
+    - IP tabanlı public endpoint URI’ları
+      (`http://192.168.1.115:8000/api/public/vehicle/<uuid>`)
+  - Android build hatası (`NdefTypeNameFormat`) giderildi.
+
+- Etkilenen dosyalar (Flutter):
+  - `lib/screens/scan_screen.dart`
+  - `lib/screens/home_screen.dart`
+  - `lib/utils/vehicle_uuid_parser.dart`
+
+- Teknik notlar:
+  - NFC oturumu yalnızca NFC modu aktifken başlatılıyor.
+  - QR tarama akışı NFC lifecycle’ından tamamen izole edildi.
+  - Lokal LAN IP ile yazılmış NDEF URI’lar test amaçlı desteklenmektedir.
+  - Parser, URI formatına bağımlı olmadan **sadece vehicle_uuid** çıkarmaya odaklanır.
+
+- Test sonucu:
+  - Gerçek Android cihazda `flutter run` ile test edildi.
+  - NDEF URI içeren NFC tag’lar okutuldu:
+    - `arvoncode://v/TEST123456`
+    - `http://192.168.1.115:8000/api/public/vehicle/TEST123456`
+  - Her iki senaryoda da:
+    - `vehicle_uuid` doğru parse edildi
+    - `VehicleProfileScreen` otomatik açıldı
+  - QR tarama akışı ayrı buton üzerinden sorunsuz çalışıyor.
+
+
+
+  #### CHECKPOINT #17 — 2025-12-25
+- Frontend:
+  - `lib/models/message.dart` oluşturuldu.
+  - `Message` ve `MessageVehicle` sınıfları tanımlandı.
+  - Backend'den gelen JSON yapısı (nested objects, datetime parsing) ile Dart nesneleri eşleştirildi.
+
+### CHECKPOINT #18 — 2025-12-27
+
+- Tamamlanan:
+  - Flutter Owner Message Inbox için servis katmanı eklendi
+  - GET /api/messages endpoint’i Flutter’dan çağrılabilir hale getirildi
+  - Backend response → List<Message> mapping doğrulandı
+
+- Etkilenen dosyalar (Flutter):
+  - lib/services/message_service.dart
+
+- Kullanılan endpoint:
+  - GET /api/messages (auth required)
+
+- Test sonucu:
+  - Token ile istek atıldı
+  - Owner’a ait mesajlar başarıyla alındı
+  - JSON → Dart model dönüşümü hatasız
+
+### CHECKPOINT #18 — 2025-12-27
+
+- Tamamlanan:
+  - Flutter Owner Messages Inbox UI (MVP) tamamlandı
+  - GET /api/messages endpoint’i UI üzerinden listelenebilir hale getirildi
+  - Loading / Error / Empty / List state’leri ayrıştırıldı
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/owner/messages_page.dart
+
+- Teknik notlar:
+  - Token constructor üzerinden alınıyor (hardcode yok)
+  - Message modeli backend JSON’una uyumlu şekilde parse ediliyor
+  - initState + mounted kontrolü ile async lifecycle güvenli
+
+- Test sonucu:
+  - Gerçek cihazda mesajlar başarıyla listelendi
+  - Boş liste ve hata senaryoları UI’da doğru gösterildi
+
+- Owner Messages özelliği yalnızca servis ve model seviyesinde değil, UI ve navigation dahil olacak şekilde tamamlandı.
+  - OwnerDashboard üzerinden MessagesPage’e güvenli token aktarımı sağlandı.
+
+### CHECKPOINT #19 — 2025-12-27
+
+- Tamamlanan:
+  - Owner Messages UI (Inbox) uygulama içine tam entegre edildi.
+  - OwnerDashboard üzerinden “Mesajlarım” butonu ile MessagesPage’e geçiş sağlandı.
+  - Navigation sırasında owner JWT token güvenli şekilde parametre olarak aktarılıyor.
+  - Token eksik veya boş ise kullanıcı SnackBar ile uyarılıyor.
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/owner/messages_page.dart
+  - lib/screens/owner/owner_dashboard.dart
+
+- Teknik notlar:
+  - OwnerDashboard artık opsiyonel `ownerToken` parametresi alıyor.
+  - MessagesPage token’a bağımlı çalışıyor, hardcode token yok.
+  - Navigation akışı: Login → OwnerDashboard → MessagesPage.
+
+- Teknik borçlar / bilinçli eksikler:
+  - OwnerDashboard üzerindeki “Son Mesaj” paneli statik (hardcode) verilerle gösteriliyor.
+    - İleride GET /api/messages üzerinden gerçek son mesaj verisi bağlanacak.
+  - Token yönetimi UI katmanında yapılıyor.
+    - İleride merkezi auth state (provider/bloc vb.) ile yönetilmeli.
+
+- Test sonucu:
+  - Gerçek cihazda dashboard üzerinden MessagesPage’e geçiş başarılı.
+  - Token mevcutken mesaj listesi doğru şekilde yükleniyor.
+  - Token yokken kullanıcı uyarılıyor, uygulama crash olmuyor.
+
+
+#### ⚠️ Teknik Borçlar / İyileştirme Notları (Owner Messages UI)
+
+- Owner Messages UI şu an MVP seviyesindedir.
+- Hata state’inde `_error` sadece generic string tutmaktadır.
+  - İleride:
+    - Gerçek exception mesajı loglanmalı
+    - UI’da kullanıcı-dostu hata mesajları ayrıştırılmalıdır.
+- `createdAt` alanı şu an `toString()` ile ham gösterilmektedir.
+  - İleride:
+    - Locale-aware tarih/saat formatı uygulanmalıdır.
+- Retry mekanizması yoktur.
+  - Hata durumunda kullanıcıya “Tekrar Dene” aksiyonu eklenmelidir.
+- Mesajlar şu an sıralama/filtreleme yapmadan listelenmektedir.
+  - İleride:
+    - Tarihe göre sıralama
+    - Araç bazlı gruplama
+    uygulanabilir.
+
+- OwnerDashboard üzerindeki “Son Mesaj” paneli şu an statik (hardcode) verilerle gösterilmektedir.
+  - İleride:
+    - GET /api/messages üzerinden son mesaj alınmalı
+    - Gerçek mesaj içeriği ve tarihi gösterilmelidir.
+
+
 
 ## 11) Yapılanlar / Kalanlar (Durum Tablosu)
 
@@ -452,19 +1018,55 @@ NDEF URI record:
 - [x] Public vehicle profile endpoint’i (GET /api/public/vehicle/{vehicle_uuid}) tamamlandı
 - [x] Public response standardı sabitlendi (ok/message/data)
 - [x] QuickMessage → public profile entegrasyonu yapıldı
+- [x] Vehicle (kart) aktivasyon akışı tamamlandı
+- [x]  POST /api/vehicle/activate
+- [x]  Kart (vehicle_id) kullanıcıya bağlanıyor
+- [x]  Owner’a ait kartları listeleme endpoint’i eklendi
+- [x]  GET /api/vehicles
+- [x]  API isteklerinde JSON/HTML dönüş problemi çözüldü
+- [x]  Accept: application/json zorunluluğu netleştirildi
+- [x] locations tablosu oluşturuldu
+- [x] Location modeli eklendi
+- [x] Public konum kaydetme endpoint’i (POST /api/public/location/save)
+- [x] vehicle_uuid → vehicles.id mapping doğrulandı
+- [x] Guest QR/NFC üzerinden konum kaydı alınıyor
+- [x] Owner için konum listeleme endpoint’i (GET /api/locations)
+- [x] Location kayıtları sadece owner’a ait araçlara filtreleniyor
+- [x] Flutter ApiConfig eklendi (dev/prod + /api prefix sabit)
+- [x] Laravel’i LAN’dan erişilebilir çalıştırma doğrulandı (--host=0.0.0.0)
+- [x] Flutter → POST /api/public/quick-message/send başarıyla çalıştı
+- [x] Quick message payload standardı Flutter’da uygulandı (vehicle_uuid, quick_message_id)
+- [x] JSON header standardı Flutter’da uygulandı (Accept: application/json)
+- [x] Flutter – Guest konum alma (GPS) başarıyla çalışıyor
+- [x] Flutter – POST /api/public/location/save entegrasyonu tamamlandı
+- [x] Android runtime konum izinleri (FINE / COARSE) doğrulandı
+- [x] Flutter → Backend → DB konum kayıt akışı uçtan uca test edildi
+- [x] locations tablosuna gerçek cihazdan veri yazıldığı doğrulandı
+- [x] Flutter – Public Vehicle Profile (GET /api/public/vehicle/{uuid}) entegrasyonu tamamlandı
+- [x] Flutter – Vehicle Profile ekranında araç bilgileri + quick messages UI hazır
+- [x] Flutter – public_service.dart ile public profile fetch standardı eklendi
+- [x] Flutter – Location Save’i Vehicle Profile ekranına taşı (Kart tasarımı ile)
+- [x] Flutter – location_test_screen.dart temizlendi / devre dışı bırakıldı
+- [x] Konum gönderme işlemi için setState tabanlı loading (spinner) yönetimi eklendi
+- [x] NFC platform izinleri/entitlements tamamlandı (Android + iOS).
+- [x] nfc_manager bağımlılığı projeye eklendi ve paketler çekildi.
 
 
 
 > Not: Endpoint’lerin “kesin çalışır” listesini repo/dosya içeriğiyle doğrulayıp buraya kilitleyeceğiz.
 
 ### 11.2 Kalanlar (Sırayla)
-1) QuickMessage migration + seeder + public endpoint’ler  
-2) Public vehicle profile endpoint’i standardize et  
-3) Public message endpoint’i (vehicle_uuid -> vehicles.id mapping kesin)  
-4) Location save + owner list  
-5) Flutter scan → profile → quick message → send  
-6) Owner ekranları (messages/locations)  
-7) Rate limit + basic abuse protection
+
+- [x] NFC Setup (nfc_manager + Android/iOS manifest/entitlements)
+- [x] Flutter – NFC okuma akışı (NDEF → vehicle_uuid → profile)
+- [ ] Owner Message Inbox (Flutter Service) 👈 ŞU AN BURADAYIZ
+- [ ] Owner Message Inbox (Flutter UI)
+- [ ] Owner Locations Screen (Flutter)
+- [x] Owner Message Inbox (Backend Endpoint) ✅
+- [x] Owner Message Inbox (Flutter Model) ✅
+- [ ] Owner ekranları (messages/locations) ve diğer backlog maddeleri.
+
+
 
 ---
 
@@ -481,10 +1083,12 @@ NDEF URI record:
 
 ### 12.2 Flutter Smoke Test
 - QR okutup deeplink alıyor mu?
-- vehicle profile çekiyor mu?
-- quick message gönderiyor mu?
+- vehicle profile çekiyor mu? ✅ (gerçek cihazda doğrulandı)
+- quick message gönderiyor mu? ✅ (telefon test edildi, ok:true)
 - özel mesaj gönderiyor mu?
 - konum kaydediyor mu?
+- quick message spam / tekrar tıklama senaryosu → cooldown ile kontrol altında
+
 
 ---
 
@@ -492,20 +1096,107 @@ NDEF URI record:
 
 Şablon:
 ```
-### [YYYY-MM-DD] Değişiklik
+### [2025-12-16] Flutter API config ve QuickMessage entegrasyonu
 - Ne değişti:
+    Flutter’da merkezi baseUrl config eklendi
+    Quick message endpoint/payload düzeltildi
 - Neden:
+    Hardcode endpoint ve yanlış route nedeniyle 404/HTML hataları vardı
+    quick_messages DB boşluğu nedeniyle 404 “Invalid quick_message_id” alınıyordu
 - Etkilenen endpoint/dosya:
+    POST /api/public/quick-message/send
+    Flutter: api_config.dart, quick_message_service.dart, nfc_menu.dart
 - Flutter etkisi:
+    Guest hızlı mesaj akışı stabil hale geldi
+
+
+### [2025-12-17] Flutter Guest Location Save entegrasyonu
+
+- Ne değişti:
+    Flutter’da GPS üzerinden konum alınıp backend’e gönderilen akış tamamlandı
+    POST /api/public/location/save endpoint’i Flutter’dan gerçek cihazla test edildi
+
+- Neden:
+    Ziyaretçinin araç sahibine konum bırakabilmesi MVP’nin kritik parçalarından biri
+
+- Etkilenen endpoint/dosya:
+    POST /api/public/location/save
+    Flutter: location_service.dart, device_location_service.dart
+
+- Flutter etkisi:
+    Guest QR/NFC akışında konum kaydetme altyapısı hazır hale geldi
+
+
+### [2025-12-17] Flutter Guest Vehicle Profile (Public) entegrasyonu
+
+- Ne değişti:
+    Flutter’da public araç profili ekranı oluşturuldu
+    GET /api/public/vehicle/{vehicle_uuid} endpoint’i Flutter servisinden çağrıldı ve UI’da gösterildi
+    Quick messages buton olarak listelendi, tıklama id log ile doğrulandı
+
+- Neden:
+    MVP’de ana akış: QR/NFC → profil → hızlı mesaj / konum temel taş
+
+- Etkilenen endpoint/dosya:
+    GET /api/public/vehicle/{vehicle_uuid}
+    Flutter: public_service.dart, vehicle_profile_screen.dart, main.dart (geçici test)
+
+- Flutter etkisi:
+    Guest profile akışı çalışır hale geldi
+    Bir sonraki adım: Quick message gönderme aksiyonu
+
+
+### [2025-12-20] Location Save UI Entegrasyonu
+- Ne değişti:
+    Konum kaydetme özelliği test ekranından çıkarılıp ana araç profil ekranına (Guest Flow) taşındı.
+- Neden:
+    Kullanıcının ayrı bir ekrana gitmeden, aynı sayfada hem mesaj atabilmesi hem de konum bırakabilmesi sağlandı.
+- Etkilenen endpoint/dosya:
+    Flutter: vehicle_profile_screen.dart
+- Flutter etkisi:
+    Guest flow (Ziyaretçi akışı) büyük oranda tamamlandı. UI artık daha profesyonel ve toplu duruyor.
+
+
+### [2025-12-26] NFC Platform Hazırlığı
+
+- Ne değişti:
+    Flutter projeye nfc_manager dahil edildi; Android’de NFC permission/feature + NDEF intent-filter ve tech list eklendi; iOS’ta NFC reader usage description ve NDEF entitlements tanımlandı.
+- Neden:
+    NFC kart okuma akışı başlatılmadan önce platform izinleri/entitlements zorunlu.
+- Flutter etkisi:
+    NFC okuma kodu yazmaya hazır altyapı; sonraki adım nfc_manager ile NDEF URI → vehicle_uuid parse akışı.
+
+
+### [2025-12-26] Flutter NFC Okuma Akışı & QR/NFC UI Ayrımı
+
+- Ne değişti:
+    ScanScreen QR ve NFC modlarına ayrıldı.
+    NFC modunda kamera devre dışı bırakıldı, yalnızca NFC okuma aktif.
+    `VehicleUuidParser`, IP tabanlı public endpoint URI’larını destekleyecek şekilde genişletildi.
+
+- Neden:
+    QR ve NFC akışları birbirine giriyordu.
+    Lokal backend IP’si ile yazılmış NFC tag’ların parse edilememesi test sürecini kilitliyordu.
+
+- Etkilenen dosyalar:
+    Flutter:
+      - scan_screen.dart
+      - home_screen.dart
+      - vehicle_uuid_parser.dart
+
+- Flutter etkisi:
+    NFC tag okutulduğunda doğrudan araç profiline yönlendirme yapılır.
+    QR ve NFC kullanıcı akışları sade, öngörülebilir ve çakışmasız hale geldi.
+
 ```
 
 ---
 
 ## 14) Çalışma Protokolü (Seninle Nasıl Çalışacağız)
 
-1) **Her yeni oturumda** bu dosyayı gönderiyorsun.  
-2) Ben sadece bu dosyaya dayanarak “şu an durum” çıkarıyorum.  
-3) Yeni endpoint/dosya adı önermeden önce bu dosyadaki standartlara bakarım.  
+1) **Her yeni oturumda** bu dosyayı gönderiyorsun.
+2) Ben sadece bu dosyaya dayanarak “şu an durum” çıkarıyorum.
+3) Yeni endpoint/dosya adı önermeden önce bu dosyadaki standartlara bakarım.
 4) Bir adımı bitirdiğinde:
    - Sen **Checkpoint** eklersin
    - “Değişiklik Günlüğü”ne yazarsın
@@ -518,7 +1209,7 @@ NDEF URI record:
 
 ## 15) Şu An Başlamak İçin 1 Numara Adım (Öneri)
 
-**QuickMessage sistemi** en önce.  
+**QuickMessage sistemi** en önce.
 Hedef:
 - `quick_messages` migration
 - `QuickMessageSeeder`
@@ -538,7 +1229,7 @@ Hedef:
 
 ### Repository
 - **Platform:** GitHub
-- **Repository URL:**  
+- **Repository URL:**
   https://github.com/huseyincakirca/arvoncode-car-nfc-api
 - **Branch:** `main`
 - **Local Path:** `/opt/lampp/htdocs/car-nfc-api`
@@ -551,6 +1242,26 @@ git init
 git branch -M main
 git add .
 git commit -m "Initial commit: ArvonCode Car NFC API backend"
+
+
+## 🗺️ Roadmap
+
+### MVP (Phase 1)
+- [x] Vehicle + UUID sistemi
+- [x] Quick Messages
+- [x] Public Vehicle Profile
+- [x] Location save (guest)
+- [ ] Owner inbox (messages)
+
+### Beta (Phase 2)
+- [ ] Push notification (Firebase)
+- [ ] Rate limit / abuse protection
+- [ ] Admin panel basic
+
+### Prod (Phase 3)
+- [ ] Multi-language
+- [ ] Subscription / pricing
+- [ ] Logging & monitoring
 
 
 
@@ -614,3 +1325,36 @@ git commit -m "Initial commit: ArvonCode Car NFC API backend"
   - git push / pull
   - android build & install
 - This environment is considered STABLE BASELINE
+
+
+---
+
+## 🖥️ Sistem Yeniden Kurulum Kaydı (15.12.2025)
+
+### İşletim Sistemi
+- Ubuntu 24.04 LTS (temiz kurulum)
+
+### Geliştirme Ortamı
+- Flutter SDK: 3.24.4 (manual kurulum, `$HOME/flutter`)
+- Android Studio: 2025.2.2 (`/opt/android-studio`)
+- Android SDK: `/home/cakirca/Android/Sdk`
+- Git: 2.43.0
+- VS Code: 1.107.0
+
+### Flutter Doctor Durumu
+- Android: ✅
+- Web (Chrome): ✅
+- Linux Desktop: ✅
+- Device: Fiziksel Android cihaz
+
+### Git
+- HTTPS + token kullanımı
+- credential.helper = store
+
+### Notlar
+- Eski sistemde `/opt/lampp/htdocs` altında bulunan Laravel API,
+  yeni sistemde kullanıcı dizinine alınmıştır.
+- NTFS diskler manuel mount ile kurtarılmıştır.
+- Tüm kritik projeler yedekten geri yüklenmiştir.
+
+---
