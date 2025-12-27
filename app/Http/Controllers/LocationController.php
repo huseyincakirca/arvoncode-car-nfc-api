@@ -52,8 +52,8 @@ class LocationController extends Controller
                 $q->where('user_id', $user->id);
             })
             ->with(['vehicle:id,vehicle_id,plate,brand,model,color'])
-            ->orderByDesc('id')
-            ->paginate(50);
+            ->orderByDesc('created_at')
+            ->get();
 
         return response()->json([
             'ok' => true,

@@ -14,18 +14,18 @@
 ---
 
 ### 📍 GÜNCEL PROJE DURUMU (ÖZET)
-- Aktif Aşama: UI Genişletme ve Entegrasyon
-- Aktif Modül: Owner
+- Aktif Aşama: Owner Paneli Genişletme
+- Aktif Modül: Owner Locations
 - Son Çalışan Tarih: 2025-12-27
-- Şu Anki Kilit Görev: Owner Locations UI’nin geliştirilmesi
+- Şu Anki Kilit Görev: Owner Dashboard “Son Konum” panelinin canlı veriye bağlanması
 
 ---
 
 ### ⏭️ BİR SONRAKİ ADIMA ETKİSİ
-- Owner tarafında Messages özelliği uçtan uca tamamlandığı için:
-  - Aynı pattern kullanılarak Owner Locations UI geliştirilebilir.
-  - Dashboard üzerindeki statik paneller gerçek backend verileriyle beslenebilir.
-  - Owner modülü için ortak state management altyapısına geçiş yapılabilir.
+- Owner tarafında konum verisi artık uçtan uca (DB → API → Flutter UI) doğrulanmıştır.
+- Dashboard üzerindeki statik “Araç Konumu” kartı, son location kaydı ile gerçek zamanlı beslenebilir.
+- Owner Dashboard için “son mesaj / son konum” özet panelleri backend’den dinamik veri alacak şekilde geliştirilebilir.
+- Owner paneli MVP kapsamı tamamlanmaya bir adım daha yaklaşmıştır.
 
 ### Bir sonraki checkpoint hedefi
 - CHECKPOINT #15
@@ -979,6 +979,40 @@ Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/mess
   - Token mevcutken mesaj listesi doğru şekilde yükleniyor.
   - Token yokken kullanıcı uyarılıyor, uygulama crash olmuyor.
 
+### CHECKPOINT #20 — 2025-12-27
+
+- Tamamlanan:
+  - Flutter Owner Locations UI tamamlandı.
+  - GET /api/locations endpoint’i Flutter UI’ya bağlandı.
+  - Backend response sözleşmesi Flutter ile uyumlu hale getirildi (`data` doğrudan liste).
+  - Loading / Empty / Error / List state’leri ayrıştırıldı.
+  - OwnerDashboard üzerinden “Konumlarım” ekranına güvenli navigation eklendi.
+  - Gerçek cihazda owner’a ait konum kayıtları başarıyla listelendi.
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/owner/locations_page.dart
+  - lib/services/location_service.dart
+  - lib/screens/owner/owner_dashboard.dart
+  - lib/main.dart (geçici test routing)
+
+- Etkilenen dosyalar (Backend):
+  - app/Http/Controllers/LocationController.php
+
+- Kullanılan endpoint:
+  - GET /api/locations (auth required)
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi.
+  - Owner’a ait konum kayıtları tarih sırasıyla listelendi.
+  - Boş veri, hata ve loading senaryoları UI’da doğru şekilde gösterildi.
+  - Backend–Flutter veri sözleşmesi doğrulandı.
+
+- Git durumu:
+  - `git status` → temiz
+  - `git add -A` → çalıştırıldı
+  - `git commit -m "feat(owner): locations UI and backend response alignment"` → tamamlandı
+  - `git push` → tamamlandı
+
 
 #### ⚠️ Teknik Borçlar / İyileştirme Notları (Owner Messages UI)
 
@@ -1057,14 +1091,10 @@ Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/mess
 
 ### 11.2 Kalanlar (Sırayla)
 
-- [x] NFC Setup (nfc_manager + Android/iOS manifest/entitlements)
-- [x] Flutter – NFC okuma akışı (NDEF → vehicle_uuid → profile)
-- [ ] Owner Message Inbox (Flutter Service) 👈 ŞU AN BURADAYIZ
-- [ ] Owner Message Inbox (Flutter UI)
-- [ ] Owner Locations Screen (Flutter)
-- [x] Owner Message Inbox (Backend Endpoint) ✅
-- [x] Owner Message Inbox (Flutter Model) ✅
-- [ ] Owner ekranları (messages/locations) ve diğer backlog maddeleri.
+- [x] Owner Message Inbox (Flutter Service)
+- [x] Owner Message Inbox (Flutter UI)
+- [x] Owner Locations Screen (Flutter)
+- [ ] Owner Dashboard “Son Konum” panelinin canlı backend verisiyle beslenmesi
 
 
 
