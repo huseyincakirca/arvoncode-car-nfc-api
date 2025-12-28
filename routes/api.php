@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vehicles', [VehicleController::class, 'myVehicles']);
 
     // Mesaj İşlemleri (BURASI EKLENDİ)
+    Route::get('/messages/latest', [MessageController::class, 'latest']);
     Route::get('/messages', [MessageController::class, 'index']);
 
     // Konum İşlemleri

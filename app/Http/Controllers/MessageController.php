@@ -21,7 +21,8 @@ class MessageController extends Controller
         // 'vehicle' ile beraber çekiyoruz ki mesajın hangi arabaya geldiğini bilelim
         $messages = Message::whereIn('vehicle_id', $vehicleIds)
             ->with('vehicle') // İlişkiyi yükle (plaka vs için)
-            ->orderBy('created_at', 'desc') // En yeni en üstte
+            ->orderByDesc('created_at') // En yeni en üstte
+            ->orderByDesc('id') // Aynı timestamp'te deterministik sırala
             ->get();
 
         // 4. Standart formatta döndür
@@ -29,6 +30,26 @@ class MessageController extends Controller
             'ok' => true,
             'message' => 'Messages retrieved',
             'data' => $messages
+        ]);
+    }
+
+    // Owner (Araç Sahibi) son mesaj
+    public function latest(Request $request)
+    {
+        $user = $request->user();
+
+        $vehicleIds = Vehicle::where('user_id', $user->id)->pluck('id');
+
+        $message = Message::whereIn('vehicle_id', $vehicleIds)
+            ->with('vehicle')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return response()->json([
+            'ok' => true,
+            'message' => $message ? 'Latest message retrieved' : 'Latest message not found',
+            'data' => $message
         ]);
     }
 }

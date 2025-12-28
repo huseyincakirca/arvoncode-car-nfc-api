@@ -6,26 +6,35 @@
 
 ---
 #### 🚦 PROJE DURUM ÖZETİ (LIVE STATUS)
-- Aktif Aşama: 📱 Flutter NFC Entegrasyonu.
-- Aktif Modül: Flutter — NFC Manager & Permissions
-- Son çalışan tarih: 2025-12-25
-- Şu an kilit görev: Flutter tarafında NFC okuma akışını kodlamak (NDEF URI → vehicle_uuid → VehicleProfileScreen).
+- Aktif Aşama: 📊 Owner Paneli Genişletme
+- Aktif Modül: Owner Dashboard
+- Son Çalışan Tarih: 2025-12-28
+- Şu Anki Kilit Görev: Owner Dashboard özet panellerinin (Son Mesaj / Son Konum) backend sözleşmeleriyle netleştirilmesi
+
 
 ---
 
 ### 📍 GÜNCEL PROJE DURUMU (ÖZET)
-- Aktif Aşama: Owner Paneli Genişletme
-- Aktif Modül: Owner Locations
-- Son Çalışan Tarih: 2025-12-27
-- Şu Anki Kilit Görev: Owner Dashboard “Son Konum” panelinin canlı veriye bağlanması
+- Aktif Aşama: 📊 Owner Paneli Genişletme
+- Aktif Modül: Owner Dashboard
+- Son Çalışan Tarih: 2025-12-28
+- Şu Anki Kilit Görev: Owner Dashboard özet panellerinin (Son Mesaj / Son Konum) backend sözleşmeleriyle netleştirilmesi
+
 
 ---
 
 ### ⏭️ BİR SONRAKİ ADIMA ETKİSİ
-- Owner tarafında konum verisi artık uçtan uca (DB → API → Flutter UI) doğrulanmıştır.
-- Dashboard üzerindeki statik “Araç Konumu” kartı, son location kaydı ile gerçek zamanlı beslenebilir.
-- Owner Dashboard için “son mesaj / son konum” özet panelleri backend’den dinamik veri alacak şekilde geliştirilebilir.
-- Owner paneli MVP kapsamı tamamlanmaya bir adım daha yaklaşmıştır.
+
+- Owner Dashboard ve Owner Inbox artık **farklı backend sözleşmelerine** sahiptir.
+- Mesaj verisi için:
+  - Özet kullanım → `/api/messages/latest`
+  - Listeleme → `/api/messages`
+- Bu ayrım sayesinde:
+  - Pagination, cache veya performans optimizasyonları inbox tarafında güvenle yapılabilir.
+  - Dashboard gereksiz payload çekmez.
+- Bir sonraki adımda:
+  - Owner Dashboard özet kartlarının (mesaj / konum) **tarih formatı standardizasyonu**
+  - veya **push notification (son mesaj bildirimi)** altyapısına geçiş mümkündür.
 
 ### Bir sonraki checkpoint hedefi
 - CHECKPOINT #15
@@ -1013,19 +1022,79 @@ Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/mess
   - `git commit -m "feat(owner): locations UI and backend response alignment"` → tamamlandı
   - `git push` → tamamlandı
 
+### CHECKPOINT #21 — 2025-12-28
+
+- Tamamlanan:
+  - Owner Dashboard “Son Konum” paneli canlı backend verisi ile çalışır hale getirildi
+  - GET /api/locations endpoint’i Owner Dashboard özet ekranında kullanıldı
+  - En güncel konum kaydı (son location) dashboard üzerinde gösterildi
+  - Loading / Empty / Data state’leri ayrıştırıldı
+  - Hardcode (statik) konum verileri tamamen kaldırıldı
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/owner/owner_dashboard.dart
+
+- Kullanılan endpoint:
+  - GET /api/locations (auth required)
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi
+  - Owner Dashboard açılışında:
+    - Konum mevcutsa → son konum bilgisi gösteriliyor
+    - Konum yoksa → “Henüz konum kaydı yok” mesajı gösteriliyor
+    - Yükleme sırasında UI stabil, crash yok
+
+- Notlar:
+  - Konum verileri backend’den canlı olarak alınmaktadır
+  - Timestamp (created_at) şu an ham backend formatında gösterilmektedir
+
+### CHECKPOINT #22 — 2025-12-28
+
+- Tamamlanan:
+  - Owner Dashboard “Son Mesaj” paneli canlı backend verisi ile çalışır hale getirildi
+  - GET /api/messages endpoint’i Owner Dashboard özet ekranında kullanıldı
+  - En güncel mesaj (son message) dashboard üzerinde gösterildi
+  - Loading / Empty / Data state’leri ayrıştırıldı
+  - Hardcode (statik) mesaj verileri tamamen kaldırıldı
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/owner/owner_dashboard.dart
+
+- Kullanılan endpoint:
+  - GET /api/messages (auth required)
+
+- Test sonucu:
+  - Gerçek Android cihazda test edildi
+  - Mesaj mevcutsa → son mesaj doğru şekilde gösteriliyor
+  - Mesaj yoksa → “Henüz mesaj yok” state’i gösteriliyor
+  - Dashboard açılışında crash veya UI kilitlenmesi gözlemlenmedi
+
+- Notlar:
+  - created_at alanı şu an ham backend formatında gösterilmektedir
+  - UI etiketleri backend field isimlerine birebir bağlıdır (ileride iyileştirilecek)
+
+### (M3) Owner Son Mesaj (Dashboard)
+- **GET** `/api/messages/latest` (auth required)
+
+Açıklama:
+Owner Dashboard özet paneli için kullanılır.
+Owner’a ait araçlara gelen **en güncel tek mesajı** döner.
+
+Davranış:
+- Mesajlar `created_at DESC, id DESC` sıralamasıyla değerlendirilir.
+- Kayıt varsa:
+  - `data` alanında **tek Message objesi** döner.
+- Kayıt yoksa:
+  - `data: null` döner.
+- Endpoint yalnızca **özet kullanım** içindir, inbox yerine geçmez.
+
+Teknik Not:
+- `/api/messages` endpoint’i yalnızca **Owner Messages Inbox (liste)** için kullanılmalıdır.
+- Dashboard bu endpoint’i kullanmaz.
 
 #### ⚠️ Teknik Borçlar / İyileştirme Notları (Owner Messages UI)
 
 - Owner Messages UI şu an MVP seviyesindedir.
-- Hata state’inde `_error` sadece generic string tutmaktadır.
-  - İleride:
-    - Gerçek exception mesajı loglanmalı
-    - UI’da kullanıcı-dostu hata mesajları ayrıştırılmalıdır.
-- `createdAt` alanı şu an `toString()` ile ham gösterilmektedir.
-  - İleride:
-    - Locale-aware tarih/saat formatı uygulanmalıdır.
-- Retry mekanizması yoktur.
-  - Hata durumunda kullanıcıya “Tekrar Dene” aksiyonu eklenmelidir.
 - Mesajlar şu an sıralama/filtreleme yapmadan listelenmektedir.
   - İleride:
     - Tarihe göre sıralama
@@ -1036,6 +1105,16 @@ Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/mess
   - İleride:
     - GET /api/messages üzerinden son mesaj alınmalı
     - Gerçek mesaj içeriği ve tarihi gösterilmelidir.
+
+- `createdAt` alanı artık ham `toString()` ile gösterilmemektedir.
+    - Tarih/saat bilgisi lokal zamana çevrilerek `GG.AA.YYYY SS:DD` formatında UI’da gösterilmektedir.
+- Hata state’i artık sadece generic string değildir.
+    - Network / timeout hataları ayrı mesajla gösterilmektedir.
+    - 401 (unauthorized / token) hataları ayrı mesajla gösterilmektedir.
+    - Diğer tüm durumlar için generic hata mesajı kullanılmaktadır.
+- Owner Messages Inbox ekranına retry (“Tekrar Dene”) aksiyonu eklenmiştir.
+    - Retry butonu hata state’inde görünür.
+    - Retry, mevcut GET `/api/messages` çağrısını yeniden tetikler.
 
 
 
@@ -1084,6 +1163,12 @@ Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/mess
 - [x] Konum gönderme işlemi için setState tabanlı loading (spinner) yönetimi eklendi
 - [x] NFC platform izinleri/entitlements tamamlandı (Android + iOS).
 - [x] nfc_manager bağımlılığı projeye eklendi ve paketler çekildi.
+- [x] Owner Messages Inbox UI kalite iyileştirmeleri tamamlandı:
+  - [x] Tarih/saat formatlama uygulandı (`createdAt`).
+  - [x] Retry (“Tekrar Dene”) mekanizması eklendi.
+  - [x] Hata mesajları minimum seviyede ayrıştırıldı (network / auth / generic).
+- [x] Owner Messages Inbox UI, MVP seviyesinden **MVP+** seviyesine yükseltildi.
+- [x] UI tarafında backend endpoint veya veri sözleşmesi değişikliği yapılmadı.
 
 
 
@@ -1094,7 +1179,7 @@ Not: Bu checkpoint’te “custom message” endpoint’i (POST /api/public/mess
 - [x] Owner Message Inbox (Flutter Service)
 - [x] Owner Message Inbox (Flutter UI)
 - [x] Owner Locations Screen (Flutter)
-- [ ] Owner Dashboard “Son Konum” panelinin canlı backend verisiyle beslenmesi
+- [x] Owner Dashboard “Son Konum” panelinin canlı backend verisiyle beslenmesi
 
 
 
