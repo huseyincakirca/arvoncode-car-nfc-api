@@ -1092,6 +1092,55 @@ Teknik Not:
 - `/api/messages` endpoint’i yalnızca **Owner Messages Inbox (liste)** için kullanılmalıdır.
 - Dashboard bu endpoint’i kullanmaz.
 
+
+### CHECKPOINT #23 — 2025-12-28 (Owner Dashboard Latest Message Endpoint + Bütünleşik Test)
+
+- Tamamlanan:
+  - Backend’de Owner Dashboard için özet endpoint eklendi:
+    - GET /api/messages/latest (auth required)
+  - `/api/messages/latest` endpoint’i:
+    - Owner’a ait araç mesajları içinde en güncel **tek** mesajı döner
+    - Sıralama garantisi: `created_at DESC, id DESC`
+    - Mesaj yoksa `data: null` döner
+  - Flutter OwnerDashboard “Son Mesaj” paneli `/api/messages/latest` endpoint’ine geçirildi
+  - Inbox (liste) endpoint’i `/api/messages` korunarak ayrıştırıldı
+  - Flutter’da MessageService içine `fetchLatestMessage()` eklendi (liste endpoint’i etkilenmedi)
+
+- Etkilenen dosyalar (Backend):
+  - routes/api.php
+  - app/Http/Controllers/MessageController.php
+
+- Etkilenen dosyalar (Flutter):
+  - lib/screens/owner_dashboard.dart
+  - lib/services/message_service.dart
+
+- Eklenen / kullanılan endpoint’ler:
+  - GET /api/messages/latest (auth required)
+
+- Test sonucu (Bütünleşik Smoke + Backend):
+  - Flutter Owner Dashboard:
+    - “Son Mesaj” paneli doğru şekilde veri gösteriyor
+    - “Son Konum” paneli doğru şekilde veri gösteriyor
+  - Flutter Owner Inbox:
+    - “Mesajlarım” listesi geliyor
+    - Sıralama en yeni → en eski (desc) doğrulandı
+  - Postman:
+    - GET /api/messages/latest → 200 OK
+    - ok:true, message:"Latest message retrieved", data: Message objesi doğrulandı
+
+### [2025-12-28] Owner Dashboard için Latest Message endpoint’i ve bütünleşik test
+- Ne değişti:
+    Owner Dashboard “Son Mesaj” paneli mesaj liste endpoint’inden ayrıldı ve /api/messages/latest ile tek kayıt bazlı özet akışına geçirildi.
+- Neden:
+    Dashboard özet kullanımının inbox liste endpoint’ine bağımlı olması gereksiz payload ve ileride pagination/sözleşme çakışması riski oluşturuyordu.
+- Etkilenen endpoint/dosya:
+    GET /api/messages/latest
+    Backend: routes/api.php, MessageController.php
+    Flutter: owner_dashboard.dart, message_service.dart
+- Test:
+    Flutter dashboard + inbox smoke test yapıldı; Postman ile /api/messages/latest 200 OK doğrulandı.
+
+
 #### ⚠️ Teknik Borçlar / İyileştirme Notları (Owner Messages UI)
 
 - Owner Messages UI şu an MVP seviyesindedir.
